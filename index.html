@@ -1,402 +1,1023 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sonecup-Planleggeren v2.9.1</title>
-    <style>
-        :root { --primary: #1a3a5f; --bg: #f4f7f9; --accent: #3182ce; --success: #38a169; --warning: #ed8936; }
-        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); padding: 15px; color: #1a202c; line-height: 1.4; }
-        .container { max-width: 1200px; margin: auto; padding-bottom: 100px; }
-        .header { text-align: center; margin-bottom: 20px; padding: 25px; background: var(--primary); color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header h1 { margin: 0; font-size: 2rem; }
-        .intro-text { background: white; border-left: 4px solid var(--accent); padding: 20px; margin-bottom: 25px; border-radius: 8px; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .tips-box { background: #ebf8ff; border: 1px solid #bee3f8; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #2c5282; }
-        .step-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
-        .step-number { position: absolute; top: -10px; left: 20px; background: var(--accent); color: white; padding: 2px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .input-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
-        .input-field { padding: 10px 12px; border: 2px solid #edf2f7; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        .team-counter-box { margin-top: 10px; padding: 8px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
-        .counter-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 14px; }
-        .btn { border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px; transition: opacity 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-print { background: #4a5568; color: white; }
-        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
-        th { padding: 8px; text-align: left; color: #718096; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #eee; }
-        td { background: #fff; padding: 5px 10px; border-bottom: 1px solid #edf2f7; font-size: 14px; vertical-align: middle; }
-        .wave-label { background: #2d3748; color: white; padding: 8px 15px; margin-top: 20px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; border-radius: 6px 6px 0 0; }
-        .drop-zone { min-height: 36px; border: 1px dashed #cbd5e0; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: grab; border-left-width: 5px; border-left-style: solid; font-weight: 600; padding: 2px 10px; }
-        .pulje-box { padding: 15px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: #fff; border-left-width: 6px; border-left-style: solid; }
-        .team-tag { background: white; border: 1px solid #cbd5e0; padding: 6px 10px; margin: 4px 0; border-radius: 6px; cursor: grab; font-size: 12px; font-weight: 600; border-left-width: 5px; border-left-style: solid; display: flex; justify-content: space-between; align-items: center; gap: 8px; position: relative; }
-        .count-badge { background: #edf2f7; color: #2d3748; border-radius: 10px; padding: 1px 6px; font-size: 10px; min-width: 15px; text-align: center; border: 1px solid #cbd5e0; }
-        .low-count { border: 2px solid var(--warning) !important; box-shadow: 0 0 5px rgba(237, 137, 54, 0.3); }
-        .steg3-layout { display: grid; grid-template-columns: 1fr 240px; gap: 20px; align-items: start; }
-        .parking-lot { position: sticky; top: 20px; background: #fff; padding: 15px; border-radius: 12px; border: 2px solid #cbd5e0; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .parking-lot h4 { margin: 0 0 10px 0; font-size: 14px; color: #2d3748; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .control-panel { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 30px; }
-        .search-res-item { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); font-size: 13px; }
-        @media (max-width: 900px) { .steg3-layout { grid-template-columns: 1fr; } .parking-lot { position: static; max-height: none; } }
-        @media print {
-            .no-print, .btn, .parking-lot, .step-number, .intro-text, .tips-box, .control-panel, #waveControls, .team-counter-box { display: none !important; }
-            .container { max-width: 100%; width: 100%; padding: 0; }
-            .steg3-layout { display: block; }
-            .step-card { box-shadow: none; padding: 0; margin: 0; }
-            .wave-label { background: #eee !important; color: black !important; border: 1px solid #ccc; margin-top: 15px; page-break-after: avoid; }
-            table { page-break-inside: auto; width: 100%; }
-            tr { page-break-inside: avoid; }
-            td { padding: 4px 8px !important; border-bottom: 1px solid #eee !important; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sonecup-Planleggeren v3.0</title>
+  <style>
+    :root {
+      --primary: #1a3a5f;
+      --bg: #f4f7f9;
+      --accent: #3182ce;
+      --success: #38a169;
+      --warning: #ed8936;
+      --danger: #e53e3e;
+      --muted: #718096;
+      --border: #e2e8f0;
+      --soft: #f8fafc;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 15px;
+      color: #1a202c;
+      line-height: 1.4;
+    }
+
+    .container { max-width: 1200px; margin: auto; padding-bottom: 100px; }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 25px;
+      background: linear-gradient(135deg, var(--primary), #265f99);
+      color: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    }
+    .header h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2.4rem); }
+    .header p { margin: 8px 0 0; opacity: .9; }
+
+    .intro-text, .tips-box, .status-box {
+      background: white;
+      border-left: 4px solid var(--accent);
+      padding: 16px 18px;
+      margin-bottom: 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tips-box { background: #ebf8ff; border-color: #bee3f8; color: #2c5282; }
+    .status-box { display:none; border-left-color: var(--success); background:#f0fff4; color:#276749; }
+    .status-box.warning { border-left-color: var(--warning); background:#fffaf0; color:#7b341e; }
+    .status-box.danger { border-left-color: var(--danger); background:#fff5f5; color:#742a2a; }
+
+    .step-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin-bottom: 22px;
+      position: relative;
+    }
+    .step-number {
+      position: absolute;
+      top: -11px;
+      left: 20px;
+      background: var(--accent);
+      color: white;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: .03em;
+    }
+
+    .input-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 15px;
+      margin-bottom: 18px;
+    }
+    label { display: block; font-size: 12px; font-weight: 800; margin-bottom: 6px; color: #4a5568; }
+    .input-field {
+      padding: 11px 12px;
+      border: 2px solid #edf2f7;
+      border-radius: 10px;
+      font-size: 14px;
+      width: 100%;
+      background: white;
+    }
+    .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(49,130,206,.12); }
+
+    .btn-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .btn {
+      border: none;
+      padding: 12px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 14px;
+      transition: transform .08s ease, opacity .2s ease, background .2s ease;
+    }
+    .btn:hover { opacity: .92; }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-print { background: #4a5568; color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .btn-light { background: #edf2f7; color: #2d3748; }
+
+    .team-input-layout { display:grid; grid-template-columns: 1.25fr .75fr; gap:16px; }
+    .team-table { width:100%; border-collapse:collapse; table-layout:auto; }
+    .team-table th { text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase; padding:6px; border-bottom:1px solid #edf2f7; }
+    .team-table td { padding:6px; border-bottom:1px solid #edf2f7; }
+    .mini-input { width:100%; padding:9px 10px; border:1px solid #cbd5e0; border-radius:8px; }
+    .club-count { width:78px; }
+    .small-btn { padding:8px 10px; font-size:12px; border-radius:8px; }
+
+    .parse-preview { background: var(--soft); border:1px solid var(--border); border-radius:10px; padding:12px; min-height:110px; font-size:13px; }
+    .preview-line { padding:4px 0; border-bottom:1px dashed #e2e8f0; }
+    .preview-line:last-child { border-bottom:0; }
+    .preview-error { color: var(--danger); font-weight:700; }
+    .team-counter-box {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .counter-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 6px; font-size: 14px; }
+
+    table.match-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; table-layout: fixed; }
+    table.match-table td, table.match-table th { background:#fff; padding: 6px 10px; border-bottom: 1px solid #edf2f7; font-size: 14px; vertical-align: middle; }
+    table.match-table th { color: var(--muted); font-size:11px; text-transform:uppercase; }
+    .wave-label {
+      background: #2d3748;
+      color: white;
+      padding: 9px 14px;
+      margin-top: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap:12px;
+      font-weight: 800;
+      font-size: 14px;
+      border-radius: 8px 8px 0 0;
+    }
+    .drop-zone {
+      min-height: 38px;
+      border: 1px dashed #cbd5e0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      border-left-width: 6px;
+      border-left-style: solid;
+      border-left-color: #cbd5e0;
+      font-weight: 700;
+      padding: 3px 10px;
+      background:white;
+      user-select:none;
+    }
+    .drop-zone.selected { outline: 3px solid rgba(49,130,206,.25); border-color: var(--accent); }
+    .drop-zone.conflict { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgba(229,62,62,.12); background:#fff5f5 !important; }
+    .drop-zone.warning { border-color: var(--warning) !important; box-shadow: 0 0 0 3px rgba(237,137,54,.12); }
+
+    .pulje-box { padding: 15px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); background: #fff; border-left-width: 7px; border-left-style: solid; }
+    .pulje-box.club-conflict { box-shadow: 0 0 0 3px rgba(237,137,54,.18); border-color: var(--warning); }
+    .pulje-warning { margin-top: 8px; padding: 7px 9px; border-radius: 8px; background: #fffaf0; color: #7b341e; font-size: 12px; font-weight: 800; }
+    .team-tag {
+      background: white;
+      border: 1px solid #cbd5e0;
+      padding: 7px 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 12px;
+      font-weight: 800;
+      border-left-width: 6px;
+      border-left-style: solid;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+    .team-tag.selected { outline:3px solid rgba(49,130,206,.25); }
+    .count-badge { background: #edf2f7; color: #2d3748; border-radius: 999px; padding: 2px 7px; font-size: 11px; min-width: 22px; text-align: center; border: 1px solid #cbd5e0; }
+    .low-count { border-color: var(--warning) !important; box-shadow: 0 0 6px rgba(237,137,54,0.28); }
+    .ok-count { border-color: var(--success) !important; }
+
+    .steg3-layout { display: grid; grid-template-columns: 1fr 250px; gap: 20px; align-items: start; }
+    .parking-lot {
+      position: sticky;
+      top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 16px;
+      border: 2px solid #cbd5e0;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    }
+    .parking-lot h4 { margin: 0 0 10px 0; font-size: 14px; color: #2d3748; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .control-panel { background: white; padding: 22px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-top: 24px; }
+    .search-res-item { background: #f8fafc; padding: 10px; border-radius: 9px; margin-bottom: 8px; border-left: 4px solid var(--accent); font-size: 13px; }
+    .conflict-list { margin: 0; padding-left: 18px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#edf2f7; color:#2d3748; font-size:12px; font-weight:800; }
+
+    @media (max-width: 900px) {
+      body { padding: 10px; }
+      .steg3-layout, .team-input-layout { grid-template-columns: 1fr; }
+      .parking-lot { position: static; max-height: none; }
+      table.match-table { table-layout:auto; }
+      .hide-mobile { display:none; }
+      .wave-label { flex-direction:column; }
+    }
+
+    @media print {
+      .no-print, .btn, .parking-lot, .step-number, .intro-text, .tips-box, .control-panel, #waveControls, .team-counter-box, .status-box { display: none !important; }
+      body { background:white; padding:0; }
+      .container { max-width: 100%; width: 100%; padding: 0; }
+      .steg3-layout { display: block; }
+      .step-card { box-shadow: none; padding: 0; margin: 0; }
+      .wave-label { background: #eee !important; color: black !important; border: 1px solid #ccc; margin-top: 15px; page-break-after: avoid; }
+      table { page-break-inside: auto; width: 100%; }
+      tr { page-break-inside: avoid; }
+      td { padding: 4px 8px !important; border-bottom: 1px solid #eee !important; }
+      .drop-zone.conflict, .drop-zone.warning { box-shadow:none !important; background:white !important; }
+    }
+  </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="header no-print">
-        <h1>Sonecup-Planleggeren</h1>
-    </div>
+  <div class="header no-print">
+    <h1>Sonecup-Planleggeren</h1>
+    <p>Rask puljeinndeling, fleksibelt kampoppsett og trygg kontroll på lagene</p>
+  </div>
 
-    <div class="intro-text no-print">
-        <strong style="color: var(--primary); font-size: 16px;">Slik gjør du det:</strong>
-        <ul style="margin-top: 10px;">
-            <li>Skriv inn lagene dine (f.eks. <strong>Freidig:3</strong> betyr 3 lag fra Freidig).</li>
-            <li>Velg antall baner og tidsintervall mellom hver kampstart.</li>
-            <li>Husk: Kampvarigheten må være kortere enn intervallet for å gi tid til lagbytte.</li>
-            <li>Trykk "Generer Grupper", sjekk inndelingen, og lag selve kampoppsettet.</li>
-        </ul>
-    </div>
+  <div id="saveStatus" class="status-box no-print"></div>
 
-    <div class="step-card no-print">
-        <div class="step-number">STEG 1</div>
-        <div class="input-group">
-            <div style="grid-column: span 2;">
-                <label>Lagliste (Klubb:Antall)</label>
-                <input id="lagInput" class="input-field" placeholder="f.eks. RBK:4, Brann:3" oninput="oppdaterLiveTeller()">
-                <div class="team-counter-box">
-                    <span>Antall lag registrert:</span>
-                    <span id="liveCounter" class="counter-badge">0</span>
-                </div>
-                <button class="btn" style="padding: 5px 10px; font-size: 10px; margin-top: 5px; background: #edf2f7; display: block;" onclick="settEksempel()">Klikk her for et eksempel</button>
-            </div>
-            <div><label>Antall baner</label><input type="number" id="baneInput" value="4" class="input-field"></div>
-            <div><label>Kampstart (intervall)</label><input type="number" id="tidInput" value="20" class="input-field"></div>
-            <div><label>Første kamp kl:</label><input type="time" id="startTid" value="10:00" class="input-field"></div>
+  <div class="intro-text no-print">
+    <strong style="color: var(--primary); font-size: 16px;">Slik gjør du det:</strong>
+    <ul style="margin-top: 10px;">
+      <li>Legg inn klubbene i tabellen, eller bruk «Lim inn liste» med formatet <strong>Freidig:3, Strindheim:2</strong>.</li>
+      <li>Velg baner, kampintervall, første kamp og ønsket antall kamper per lag.</li>
+      <li>Generer grupper, juster puljene ved behov, og lag kampoppsett.</li>
+      <li>Alt lagres automatisk i nettleseren din.</li>
+    </ul>
+  </div>
+
+  <div class="step-card no-print">
+    <div class="step-number">STEG 1</div>
+
+    <div class="team-input-layout">
+      <div>
+        <label>Klubber og antall lag</label>
+        <table class="team-table" id="clubTable">
+          <thead><tr><th>Klubb</th><th style="width:95px;">Antall</th><th style="width:70px;"></th></tr></thead>
+          <tbody id="clubRows"></tbody>
+        </table>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-light small-btn" onclick="leggTilKlubbRad()">+ Legg til klubb</button>
+          <button class="btn btn-light small-btn" onclick="visLimInn()">Lim inn liste</button>
+          <button class="btn btn-light small-btn" onclick="settEksempel()">Eksempel</button>
         </div>
-        <button class="btn btn-primary" onclick="genererPuljer()">1. Generer Grupper</button>
-    </div>
-
-    <div id="steg2_container" class="step-card no-print" style="display:none;">
-        <div class="step-number">STEG 2</div>
-        <p style="font-size: 13px; margin-bottom: 15px;">Du kan dra og slippe lagene mellom gruppene for å justere nivå eller unngå at klubbkamerater møtes.</p>
-        <div id="puljeGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;"></div>
-        <button class="btn btn-primary" style="margin-top:20px; background:#2c5282" onclick="startOppsett()">2. Lag Kampoppsett</button>
-    </div>
-
-    <div id="steg3_container" style="display:none;">
-        <div class="steg3-layout">
-            <div class="main-content">
-                <div class="step-card">
-                    <div class="step-number no-print">STEG 3</div>
-                    <div class="tips-box no-print">
-                        💡 <strong>Tips:</strong> Du kan dra lag fritt mellom banene for å tilpasse oppsettet manuelt. Høyreklikk på et lag for å fjerne det fra en kamp.
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="margin:0;">Kampoversikt</h3>
-                        <button class="btn btn-print no-print" onclick="window.print()">🖨️ Skriv ut / Lagre PDF</button>
-                    </div>
-                    <div id="kampPlan"></div>
-                    <div id="waveControls" class="no-print" style="margin-top:20px; padding-top:20px; border-top: 2px solid #eee; display: flex; gap: 10px;">
-                        <button class="btn btn-primary" style="background: var(--success);" onclick="leggTilNesteBølgeSett()">+ Neste bølge</button>
-                        <button class="btn btn-outline" onclick="leggTilTidsluke()">+ Legg til tom bolk</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="parking-lot no-print">
-                <h4>🅿️ P-plass</h4>
-                <div id="lagPool" style="display: flex; flex-direction: column; gap: 4px;"></div>
-            </div>
+        <div id="pasteBox" style="display:none; margin-top:12px;">
+          <label>Lim inn liste, f.eks. RBK:4, Brann:3</label>
+          <input id="lagInput" class="input-field" placeholder="RBK:4, Brann:3" oninput="oppdaterLivePreview()" />
+          <div class="btn-row" style="margin-top:8px;">
+            <button class="btn btn-primary small-btn" onclick="brukLimInnListe()">Bruk liste</button>
+            <button class="btn btn-light small-btn" onclick="visLimInn(false)">Lukk</button>
+          </div>
         </div>
+      </div>
 
-        <div class="control-panel no-print">
-            <h3 style="margin-top: 0;">🔍 Kontrollpanel</h3>
-            <div class="input-group">
-                <div style="grid-column: span 2;">
-                    <label>Hurtigsøk lag</label>
-                    <input type="text" id="teamSearch" class="input-field" placeholder="Skriv lagnavn..." onkeyup="kjørSøk()">
-                </div>
-            </div>
-            <div id="searchResult"></div>
-            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #edf2f7;">
-            <button class="btn btn-outline" onclick="genererTotalOversikt()">Vis komplett oversikt for alle lag</button>
-            <div id="totalOversikt" style="margin-top: 20px;"></div>
+      <div>
+        <label>Live-sjekk</label>
+        <div id="parsePreview" class="parse-preview">Legg inn klubber for å se lagene her.</div>
+        <div class="team-counter-box">
+          <span>Antall lag:</span>
+          <span id="liveCounter" class="counter-badge">0</span>
         </div>
+      </div>
     </div>
+
+    <div class="input-group" style="margin-top:18px;">
+      <div><label>Antall baner</label><input type="number" id="baneInput" value="4" min="1" class="input-field" onchange="autoLagre()" /></div>
+      <div><label>Kampstart-intervall, minutter</label><input type="number" id="tidInput" value="20" min="1" class="input-field" onchange="autoLagre()" /></div>
+      <div><label>Første kamp kl.</label><input type="time" id="startTid" value="10:00" class="input-field" onchange="autoLagre()" /></div>
+      <div><label>Ønsket kamper per lag</label><input type="number" id="targetMatches" value="3" min="1" max="8" class="input-field" onchange="oppdaterLagPool(); validerKampoppsett(); autoLagre();" /></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="genererPuljer()">1. Generer grupper</button>
+      <button class="btn btn-outline" onclick="lastFraMinne()">Hent lagret oppsett</button>
+      <button class="btn btn-danger" onclick="nullstillAlt()">Nullstill</button>
+    </div>
+  </div>
+
+  <div id="steg2_container" class="step-card no-print" style="display:none;">
+    <div class="step-number">STEG 2</div>
+    <p style="font-size: 13px; margin-bottom: 15px;">Dra og slipp lag mellom gruppene. På mobil kan du trykke på et lag og deretter trykke i ønsket gruppe.</p>
+    <div id="puljeGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;"></div>
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn btn-primary" style="background:#2c5282" onclick="startOppsett()">2. Lag kampoppsett</button>
+      <button class="btn btn-outline" onclick="tegnPuljer()">Oppdater puljer</button>
+    </div>
+  </div>
+
+  <div id="steg3_container" style="display:none;">
+    <div class="steg3-layout">
+      <div class="main-content">
+        <div class="step-card">
+          <div class="step-number no-print">STEG 3</div>
+          <div class="tips-box no-print">
+            💡 <strong>Tips:</strong> Dra lag mellom kamper, eller trykk et lag og deretter en ledig plass. Høyreklikk på et lag for å fjerne det fra en kamp.
+          </div>
+          <div id="validationBox" class="status-box warning no-print"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap:10px; margin-bottom: 15px; flex-wrap:wrap;">
+            <h3 style="margin:0;">Kampoversikt</h3>
+            <div class="btn-row">
+              <button class="btn btn-print no-print" onclick="window.print()">🖨️ Skriv ut / Lagre PDF</button>
+              <button class="btn btn-outline no-print" onclick="eksporterCSV()">Eksporter CSV</button>
+            </div>
+          </div>
+          <div id="kampPlan"></div>
+          <div id="waveControls" class="no-print" style="margin-top:20px; padding-top:20px; border-top: 2px solid #eee; display: flex; gap: 10px; flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="leggTilNesteBølgeSett()">+ Neste bølge</button>
+            <button class="btn btn-outline" onclick="leggTilTidsluke()">+ Legg til pause / tom bolk</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="parking-lot no-print">
+        <h4>🅿️ P-plass</h4>
+        <div id="lagPool" style="display: flex; flex-direction: column; gap: 4px;"></div>
+      </div>
+    </div>
+
+    <div class="control-panel no-print">
+      <h3 style="margin-top: 0;">🔍 Kontrollpanel</h3>
+      <div class="input-group">
+        <div style="grid-column: span 2;">
+          <label>Hurtigsøk lag</label>
+          <input type="text" id="teamSearch" class="input-field" placeholder="Skriv lagnavn..." onkeyup="kjørSøk()" />
+        </div>
+      </div>
+      <div id="searchResult"></div>
+      <hr style="margin: 25px 0; border: 0; border-top: 1px solid #edf2f7;" />
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="genererTotalOversikt()">Vis komplett oversikt for alle lag</button>
+        <button class="btn btn-outline" onclick="validerKampoppsett()">Kjør kontrollsjekk</button>
+      </div>
+      <div id="totalOversikt" style="margin-top: 20px;"></div>
+    </div>
+  </div>
 </div>
 
 <script>
-    let puljer = {}; let bruktePuljer = [];
-    let sisteH = 10, sisteM = 0; let draggedElement = null;
+  const STORAGE_KEY = 'sonecup_planlegger_v3';
+  let puljer = {};
+  let bruktePuljer = [];
+  let sisteH = 10, sisteM = 0;
+  let draggedElement = null;
+  let valgtLagData = null;
+  let valgtPuljeLag = null;
+  let erUnderOppstart = true;
 
-    function hentPuljeFarge(index, mørk = false) {
-        let hue = (index * 137.5) % 360; 
-        return mørk ? `hsl(${hue}, 70%, 40%)` : `hsl(${hue}, 70%, 95%)`;
+  function hentPuljeFarge(index, mørk = false) {
+    const hue = (index * 137.5) % 360;
+    return mørk ? `hsl(${hue}, 70%, 40%)` : `hsl(${hue}, 70%, 95%)`;
+  }
+
+  function lagKlubbRad(navn = '', antall = 1) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="mini-input club-name" value="${escapeAttr(navn)}" placeholder="Klubbnavn" oninput="oppdaterLivePreview(); autoLagre();"></td>
+      <td><input class="mini-input club-count" type="number" min="0" value="${antall}" oninput="oppdaterLivePreview(); autoLagre();"></td>
+      <td><button class="btn btn-light small-btn" onclick="fjernKlubbRad(this)">Fjern</button></td>
+    `;
+    return tr;
+  }
+
+  function leggTilKlubbRad(navn = '', antall = 1) {
+    document.getElementById('clubRows').appendChild(lagKlubbRad(navn, antall));
+    oppdaterLivePreview();
+    autoLagre();
+  }
+
+  function fjernKlubbRad(btn) {
+    btn.closest('tr').remove();
+    if (!document.querySelector('#clubRows tr')) leggTilKlubbRad();
+    oppdaterLivePreview();
+    autoLagre();
+  }
+
+  function hentKlubberFraTabell() {
+    return [...document.querySelectorAll('#clubRows tr')].map(row => ({
+      navn: row.querySelector('.club-name').value.trim(),
+      antall: parseInt(row.querySelector('.club-count').value, 10)
+    })).filter(k => k.navn || k.antall);
+  }
+
+  function parseListeInput(input) {
+    const result = [];
+    const errors = [];
+    if (!input.trim()) return { result, errors };
+
+    input.split(',').forEach(raw => {
+      const item = raw.trim();
+      if (!item) return;
+      const parts = item.split(':');
+      if (parts.length !== 2) {
+        errors.push(`${item}: bruk formatet Klubb:Antall`);
+        return;
+      }
+      const navn = parts[0].trim();
+      const antall = parseInt(parts[1].trim(), 10);
+      if (!navn) errors.push(`${item}: mangler klubbnavn`);
+      else if (Number.isNaN(antall) || antall < 1) errors.push(`${item}: mangler gyldig antall`);
+      else result.push({ navn, antall });
+    });
+    return { result, errors };
+  }
+
+  function lagLaglisteFraKlubber(klubber) {
+    const alle = [];
+    klubber.forEach(({ navn, antall }) => {
+      if (!navn || Number.isNaN(antall) || antall < 1) return;
+      for (let i = 1; i <= antall; i++) alle.push(`${navn} ${i}`);
+    });
+    return alle;
+  }
+
+  function klubbFraLag(lag) {
+    return lag.replace(/\s+\d+$/, '').trim();
+  }
+
+  function finnKlubbKonflikterIListe(lagListe) {
+    const teller = {};
+    lagListe.forEach(lag => {
+      const klubb = klubbFraLag(lag);
+      if (!klubb || lag === '-') return;
+      teller[klubb] = (teller[klubb] || 0) + 1;
+    });
+    return Object.keys(teller).filter(klubb => teller[klubb] > 1);
+  }
+
+  function oppdaterLivePreview() {
+    const klubber = hentKlubberFraTabell();
+    const preview = document.getElementById('parsePreview');
+    const lag = lagLaglisteFraKlubber(klubber);
+    document.getElementById('liveCounter').innerText = lag.length;
+
+    const feil = klubber.filter(k => !k.navn || Number.isNaN(k.antall) || k.antall < 1);
+    if (feil.length) {
+      preview.innerHTML = `<div class="preview-error">Noen rader mangler klubbnavn eller gyldig antall.</div>`;
+      return;
+    }
+    if (!lag.length) {
+      preview.innerHTML = 'Legg inn klubber for å se lagene her.';
+      return;
+    }
+    preview.innerHTML = klubber.map(k => {
+      const previewTeams = Array.from({ length: k.antall }, (_, i) => `${k.navn} ${i + 1}`).join(', ');
+      return `<div class="preview-line"><strong>${escapeHtml(k.navn)}:${k.antall}</strong> → ${escapeHtml(previewTeams)}</div>`;
+    }).join('');
+  }
+
+  function visLimInn(show = true) {
+    document.getElementById('pasteBox').style.display = show ? 'block' : 'none';
+    if (show) document.getElementById('lagInput').focus();
+  }
+
+  function oppdaterLiveTeller() { oppdaterLivePreview(); }
+
+  function brukLimInnListe() {
+    const { result, errors } = parseListeInput(document.getElementById('lagInput').value);
+    const preview = document.getElementById('parsePreview');
+    if (errors.length) {
+      preview.innerHTML = errors.map(e => `<div class="preview-error">${escapeHtml(e)}</div>`).join('');
+      return;
+    }
+    if (!result.length) return;
+    document.getElementById('clubRows').innerHTML = '';
+    result.forEach(k => leggTilKlubbRad(k.navn, k.antall));
+    visLimInn(false);
+    oppdaterLivePreview();
+    autoLagre();
+  }
+
+  function settEksempel() {
+    document.getElementById('clubRows').innerHTML = '';
+    [['RBK', 5], ['Brann', 4], ['Molde', 5], ['Vålerenga', 4], ['Viking', 3]].forEach(([n, a]) => leggTilKlubbRad(n, a));
+    oppdaterLivePreview();
+    visStatus('Eksempel lagt inn.', 'success');
+  }
+
+  function genererPuljer() {
+    const alle = lagLaglisteFraKlubber(hentKlubberFraTabell());
+    if (alle.length < 2) {
+      visStatus('Legg inn minst 2 lag før du genererer grupper.', 'danger');
+      return;
     }
 
-    function oppdaterLiveTeller() {
-        const input = document.getElementById('lagInput').value;
-        let total = 0;
-        input.split(',').forEach(item => {
-            let parts = item.split(':');
-            if(parts.length === 2) {
-                let a = parseInt(parts[1]);
-                if(!isNaN(a)) total += a;
-            }
-        });
-        document.getElementById('liveCounter').innerText = total;
+    let plan = [];
+    let n = alle.length;
+    while (n > 0) {
+      if (n === 5) { plan.push(3, 2); n = 0; }
+      else if (n === 2) { plan.push(2); n = 0; }
+      else if (n === 3) { plan.push(3); n = 0; }
+      else { plan.push(4); n -= 4; }
     }
 
-    function settEksempel() { 
-        document.getElementById('lagInput').value = "RBK:5, Brann:4, Molde:5, Vålerenga:4, Viking:3"; 
-        oppdaterLiveTeller();
+    puljer = {};
+    const kopi = [...alle].sort(() => Math.random() - 0.5);
+    const bokstaver = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ';
+    plan.forEach((s, i) => { puljer[bokstaver[i]] = kopi.splice(0, s); });
+
+    tegnPuljer();
+    document.getElementById('steg2_container').style.display = 'block';
+    autoLagre();
+    visStatus('Grupper generert. Du kan justere dem før du lager kampoppsett.', 'success');
+  }
+
+  function tegnPuljer() {
+    const grid = document.getElementById('puljeGrid');
+    grid.innerHTML = '';
+    Object.keys(puljer).forEach((p, index) => {
+      const mørkFarge = hentPuljeFarge(index, true);
+      const lysFarge = hentPuljeFarge(index, false);
+      const konfliktKlubber = finnKlubbKonflikterIListe(puljer[p]);
+      const div = document.createElement('div');
+      div.className = 'pulje-box' + (konfliktKlubber.length ? ' club-conflict' : '');
+      div.dataset.pulje = p;
+      div.style.backgroundColor = lysFarge;
+      div.style.borderLeftColor = mørkFarge;
+      div.innerHTML = `<strong>Pulje ${p}</strong><br><small>${puljer[p].length} lag</small>${konfliktKlubber.length ? `<div class="pulje-warning">⚠️ Samme klubb i puljen: ${konfliktKlubber.map(escapeHtml).join(', ')}</div>` : ''}<hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">`;
+      div.ondragover = e => e.preventDefault();
+      div.ondrop = e => {
+        const lag = e.dataTransfer.getData('text').split('|')[0];
+        flyttLagTilPulje(lag, p);
+      };
+      div.onclick = e => {
+        if (!valgtPuljeLag || e.target.classList.contains('team-tag')) return;
+        flyttLagTilPulje(valgtPuljeLag, p);
+        valgtPuljeLag = null;
+      };
+
+      puljer[p].forEach(l => {
+        const t = document.createElement('div');
+        t.className = 'team-tag' + (konfliktKlubber.includes(klubbFraLag(l)) ? ' low-count' : '');
+        t.draggable = true;
+        t.innerText = l;
+        t.style.borderLeftColor = mørkFarge;
+        t.ondragstart = e => e.dataTransfer.setData('text', l + '|' + p);
+        t.onclick = e => {
+          e.stopPropagation();
+          valgtPuljeLag = l;
+          document.querySelectorAll('#puljeGrid .team-tag').forEach(x => x.classList.remove('selected'));
+          t.classList.add('selected');
+        };
+        div.appendChild(t);
+      });
+      grid.appendChild(div);
+    });
+  }
+
+  function flyttLagTilPulje(lag, pulje) {
+    Object.keys(puljer).forEach(k => puljer[k] = puljer[k].filter(l => l !== lag));
+    puljer[pulje].push(lag);
+    tegnPuljer();
+    autoLagre();
+  }
+
+  function startOppsett() {
+    const startTidInput = document.getElementById('startTid').value.split(':');
+    sisteH = parseInt(startTidInput[0], 10);
+    sisteM = parseInt(startTidInput[1], 10);
+    document.getElementById('kampPlan').innerHTML = '';
+    bruktePuljer = [];
+    document.getElementById('steg3_container').style.display = 'block';
+    leggTilNesteBølgeSett();
+    autoLagre();
+  }
+
+  function tellKamper(lagNavn) {
+    let antall = 0;
+    document.querySelectorAll('#kampPlan .drop-zone').forEach(z => {
+      if (z.innerText.trim() === lagNavn) antall++;
+    });
+    return antall;
+  }
+
+  function oppdaterLagPool() {
+    const pool = document.getElementById('lagPool');
+    if (!pool) return;
+    pool.innerHTML = '';
+    pool.ondragover = e => e.preventDefault();
+    pool.ondrop = e => {
+      e.preventDefault();
+      if (draggedElement) tømDropZone(draggedElement);
+      draggedElement = null;
+      valgtLagData = null;
+      oppdaterLagPool();
+      validerKampoppsett();
+      autoLagre();
+    };
+
+    const target = parseInt(document.getElementById('targetMatches').value, 10) || 3;
+    Object.keys(puljer).forEach((p, idx) => {
+      puljer[p].forEach(l => {
+        const kAntall = tellKamper(l);
+        const t = document.createElement('div');
+        t.className = 'team-tag ' + (kAntall < target ? 'low-count' : 'ok-count');
+        t.draggable = true;
+        t.style.backgroundColor = hentPuljeFarge(idx);
+        t.style.borderLeftColor = hentPuljeFarge(idx, true);
+        t.innerHTML = `<span>${escapeHtml(l)}</span><span class="count-badge">${kAntall}/${target}</span>`;
+        t.ondragstart = e => {
+          draggedElement = null;
+          e.dataTransfer.setData('text', JSON.stringify({ tekst: l, bg: t.style.backgroundColor, border: t.style.borderLeftColor }));
+        };
+        t.onclick = () => velgLagForKlikk({ tekst: l, bg: t.style.backgroundColor, border: t.style.borderLeftColor }, t);
+        pool.appendChild(t);
+      });
+    });
+  }
+
+  function velgLagForKlikk(data, element) {
+    valgtLagData = data;
+    document.querySelectorAll('.team-tag, .drop-zone').forEach(el => el.classList.remove('selected'));
+    element.classList.add('selected');
+  }
+
+  function dropInMatch(e) {
+    e.preventDefault();
+    const target = e.target.closest('.drop-zone');
+    if (!target) return;
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text'));
+      settLagIDropZone(target, data);
+    } catch(err) {}
+  }
+
+  function settLagIDropZone(target, data) {
+    if (draggedElement && draggedElement !== target) tømDropZone(draggedElement);
+    target.innerText = data.tekst;
+    target.style.backgroundColor = data.bg;
+    target.style.borderLeftColor = data.border;
+    draggedElement = null;
+    valgtLagData = null;
+    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    oppdaterLagPool();
+    validerKampoppsett();
+    autoLagre();
+  }
+
+  function dragFromMatch(e) {
+    if (e.target.innerText.trim() === '-') return;
+    draggedElement = e.target;
+    e.dataTransfer.setData('text', JSON.stringify({ tekst: e.target.innerText.trim(), bg: e.target.style.backgroundColor, border: e.target.style.borderLeftColor }));
+  }
+
+  function tømDropZone(zone) {
+    zone.innerText = '-';
+    zone.style.backgroundColor = '';
+    zone.style.borderLeftColor = '#cbd5e0';
+    zone.classList.remove('conflict', 'warning');
+  }
+
+  function leggTilNesteBølgeSett() {
+    const baner = parseInt(document.getElementById('baneInput').value, 10);
+    const intervall = parseInt(document.getElementById('tidInput').value, 10);
+    const gjenstående = Object.keys(puljer).filter(p => !bruktePuljer.includes(p));
+    if (gjenstående.length === 0) {
+      visStatus('Alle puljer er allerede lagt inn i kampoppsettet.', 'warning');
+      return;
     }
 
-    function genererPuljer() {
-        const input = document.getElementById('lagInput').value;
-        if(!input) return;
-        let alle = [];
-        input.split(',').forEach(item => {
-            let parts = item.split(':');
-            if(parts.length === 2) {
-                let k = parts[0].trim(); let a = parseInt(parts[1]);
-                for(let i=1; i<=a; i++) alle.push(`${k} ${i}`);
-            }
-        });
-        let plan = []; let n = alle.length;
-        while (n > 0) {
-            if (n === 5) { plan.push(3, 2); n = 0; }
-            else if (n === 2) { plan.push(2); n = 0; }
-            else if (n === 3) { plan.push(3); n = 0; }
-            else { plan.push(4); n -= 4; }
+    const puljerPerBlokk = Math.max(1, Math.floor(baner / 2));
+    const blokk1 = gjenstående.slice(0, puljerPerBlokk);
+    const blokk2 = gjenstående.slice(puljerPerBlokk, puljerPerBlokk * 2);
+    bruktePuljer.push(...blokk1, ...blokk2);
+
+    let html = '';
+    for (let r = 0; r < 6; r++) {
+      const aktivePuljer = (r % 2 === 0) ? blokk1 : blokk2;
+      if (aktivePuljer.length === 0) continue;
+      const tid = `${String(sisteH).padStart(2, '0')}:${String(sisteM).padStart(2, '0')}`;
+      const kampIndex = Math.floor(r / 2);
+      html += `<div class="wave-label"><span class="tid-info">KL. ${tid}</span> <span>Pulje ${aktivePuljer.join(' & ')}</span></div><table class="match-table">`;
+
+      const matches = [];
+      aktivePuljer.forEach(pk => {
+        const l = puljer[pk];
+        let m_list;
+        if (l.length === 4) m_list = [[[l[0],l[1]],[l[2],l[3]]], [[l[0],l[2]],[l[1],l[3]]], [[l[0],l[3]],[l[1],l[2]]]];
+        else if (l.length === 3) m_list = [[[l[0],l[1]],['-','-']], [[l[0],l[2]],['-','-']], [[l[1],l[2]],['-','-']]];
+        else if (l.length === 2) m_list = [[[l[0],l[1]],['-','-']], [['-','-'],['-','-']], [['-','-'],['-','-']]];
+        else m_list = [[['-','-'],['-','-']], [['-','-'],['-','-']], [['-','-'],['-','-']]];
+        matches.push({ p: pk, t: m_list[kampIndex][0] }, { p: pk, t: m_list[kampIndex][1] });
+      });
+
+      for (let b = 1; b <= baner; b++) {
+        const mO = matches[b - 1];
+        const hLag = (mO && mO.t[0] !== '-') ? mO.t[0] : '-';
+        const bLag = (mO && mO.t[1] !== '-') ? mO.t[1] : '-';
+        const pID = (mO && hLag !== '-') ? mO.p : null;
+        const pIndex = pID ? pID.charCodeAt(0) - 65 : -1;
+        const stil = pID ? `style="background-color:${hentPuljeFarge(pIndex)}; border-left-color:${hentPuljeFarge(pIndex, true)}"` : '';
+        html += `<tr><td width="60">Bane ${b}</td><td width="80" class="hide-mobile">${pID ? 'Pulje ' + pID : '-'}</td>
+          <td><div class="drop-zone" ${stil} ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">${escapeHtml(hLag)}</div></td>
+          <td width="30" style="text-align:center">vs</td>
+          <td><div class="drop-zone" ${stil} ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">${escapeHtml(bLag)}</div></td></tr>`;
+      }
+      html += '</table>';
+      sisteM += intervall;
+      while (sisteM >= 60) { sisteH++; sisteM -= 60; }
+    }
+
+    document.getElementById('kampPlan').insertAdjacentHTML('beforeend', html);
+    aktiverKlikkPlassering();
+    oppdaterLagPool();
+    validerKampoppsett();
+    autoLagre();
+  }
+
+  function leggTilTidsluke() {
+    const baner = parseInt(document.getElementById('baneInput').value, 10);
+    const intervall = parseInt(document.getElementById('tidInput').value, 10) || 20;
+    const tid = `${String(sisteH).padStart(2, '0')}:${String(sisteM).padStart(2, '0')}`;
+    let html = `<div class="wave-label"><span class="tid-info">KL. ${tid}</span> <span>PAUSE / EGEN PERIODE</span></div><table class="match-table">`;
+    for (let b = 1; b <= baner; b++) {
+      html += `<tr><td width="60">Bane ${b}</td><td width="80" class="hide-mobile">-</td>
+        <td><div class="drop-zone" ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">-</div></td>
+        <td width="30" style="text-align:center">vs</td>
+        <td><div class="drop-zone" ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">-</div></td></tr>`;
+    }
+    html += '</table>';
+    document.getElementById('kampPlan').insertAdjacentHTML('beforeend', html);
+    sisteM += intervall;
+    while (sisteM >= 60) { sisteH++; sisteM -= 60; }
+    aktiverKlikkPlassering();
+    oppdaterLagPool();
+    autoLagre();
+  }
+
+  function aktiverKlikkPlassering() {
+    document.querySelectorAll('#kampPlan .drop-zone').forEach(zone => {
+      zone.onclick = () => {
+        if (valgtLagData) settLagIDropZone(zone, valgtLagData);
+        else if (zone.innerText.trim() !== '-') velgLagForKlikk({ tekst: zone.innerText.trim(), bg: zone.style.backgroundColor, border: zone.style.borderLeftColor }, zone);
+      };
+    });
+  }
+
+  function hentKamper() {
+    const kamper = [];
+    const bølger = document.querySelectorAll('.wave-label');
+    const tabeller = document.querySelectorAll('#kampPlan table');
+    tabeller.forEach((tabell, idx) => {
+      const tid = bølger[idx]?.querySelector('.tid-info')?.innerText.replace('KL. ', '') || '??:??';
+      tabell.querySelectorAll('tr').forEach(rad => {
+        const celler = rad.querySelectorAll('td');
+        if (celler.length >= 5) {
+          const hjemmeZone = celler[2].querySelector('.drop-zone');
+          const borteZone = celler[4].querySelector('.drop-zone');
+          kamper.push({
+            tid,
+            bane: celler[0].innerText.trim(),
+            hjemme: hjemmeZone?.innerText.trim() || '-',
+            borte: borteZone?.innerText.trim() || '-',
+            hjemmeZone,
+            borteZone
+          });
         }
-        puljer = {}; let kopi = [...alle].sort(() => Math.random() - 0.5);
-        const bokstaver = "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ";
-        plan.forEach((s, i) => { puljer[bokstaver[i]] = kopi.splice(0, s); });
+      });
+    });
+    return kamper;
+  }
+
+  function validerKampoppsett() {
+    document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('conflict', 'warning'));
+    const kamper = hentKamper();
+    const meldinger = [];
+
+    kamper.forEach(k => {
+      if (k.hjemme !== '-' && k.hjemme === k.borte) {
+        k.hjemmeZone.classList.add('conflict');
+        k.borteZone.classList.add('conflict');
+        meldinger.push(`${k.tid} ${k.bane}: ${k.hjemme} spiller mot seg selv.`);
+      }
+      if (k.hjemme !== '-' && k.borte !== '-' && klubbFraLag(k.hjemme) === klubbFraLag(k.borte)) {
+        k.hjemmeZone.classList.add('warning');
+        k.borteZone.classList.add('warning');
+        meldinger.push(`${k.tid} ${k.bane}: ${k.hjemme} møter lag fra samme klubb (${k.borte}).`);
+      }
+    });
+
+    const perTid = {};
+    kamper.forEach(k => {
+      [k.hjemme, k.borte].forEach((lag, i) => {
+        if (!lag || lag === '-') return;
+        const key = `${k.tid}|${lag}`;
+        if (!perTid[key]) perTid[key] = [];
+        perTid[key].push(i === 0 ? k.hjemmeZone : k.borteZone);
+      });
+    });
+    Object.keys(perTid).forEach(key => {
+      if (perTid[key].length > 1) {
+        const [tid, lag] = key.split('|');
+        perTid[key].forEach(z => z.classList.add('conflict'));
+        meldinger.push(`${tid}: ${lag} er satt opp på flere baner samtidig.`);
+      }
+    });
+
+    const sorterte = kamper.filter(k => k.hjemme !== '-' || k.borte !== '-');
+    const lagTider = {};
+    sorterte.forEach((k, idx) => {
+      [k.hjemme, k.borte].forEach(lag => {
+        if (!lag || lag === '-') return;
+        if (!lagTider[lag]) lagTider[lag] = [];
+        lagTider[lag].push({ idx, tid: k.tid, kamp: k });
+      });
+    });
+    Object.keys(lagTider).forEach(lag => {
+      const arr = lagTider[lag].sort((a,b) => a.idx - b.idx);
+      for (let i = 1; i < arr.length; i++) {
+        if (arr[i].idx === arr[i - 1].idx + 1) {
+          [arr[i].kamp.hjemmeZone, arr[i].kamp.borteZone, arr[i-1].kamp.hjemmeZone, arr[i-1].kamp.borteZone].forEach(z => {
+            if (z && z.innerText.trim() === lag) z.classList.add('warning');
+          });
+          meldinger.push(`${lag} spiller to kamper rett etter hverandre (${arr[i-1].tid} og ${arr[i].tid}).`);
+        }
+      }
+    });
+
+    const box = document.getElementById('validationBox');
+    if (!box) return;
+    if (meldinger.length) {
+      box.className = 'status-box warning no-print';
+      box.style.display = 'block';
+      box.innerHTML = `<strong>Kontrollsjekk fant ${meldinger.length} ting å se på:</strong><ul class="conflict-list">${meldinger.slice(0, 8).map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>${meldinger.length > 8 ? '<p>Viser de 8 første.</p>' : ''}`;
+    } else if (kamper.length) {
+      box.className = 'status-box no-print';
+      box.style.display = 'block';
+      box.innerHTML = '✅ Ingen åpenbare konflikter funnet.';
+    }
+  }
+
+  function kjørSøk() {
+    const q = document.getElementById('teamSearch').value.toLowerCase().trim();
+    const res = document.getElementById('searchResult');
+    if (q.length < 2) { res.innerHTML = ''; return; }
+    const treff = hentKamper().filter(k => k.hjemme.toLowerCase().includes(q) || k.borte.toLowerCase().includes(q))
+      .map(k => `<div class="search-res-item"><strong>KL. ${k.tid}</strong> | ${escapeHtml(k.bane)} | ${escapeHtml(k.hjemme)} vs ${escapeHtml(k.borte)}</div>`);
+    res.innerHTML = treff.join('') || "<p style='font-size:12px;'>Ingen treff.</p>";
+  }
+
+  function genererTotalOversikt() {
+    const oversikt = {};
+    hentKamper().forEach(k => {
+      if (k.hjemme && k.hjemme !== '-') {
+        if (!oversikt[k.hjemme]) oversikt[k.hjemme] = [];
+        oversikt[k.hjemme].push(`KL. ${k.tid} (${k.bane}) mot ${k.borte || '???'}`);
+      }
+      if (k.borte && k.borte !== '-') {
+        if (!oversikt[k.borte]) oversikt[k.borte] = [];
+        oversikt[k.borte].push(`KL. ${k.tid} (${k.bane}) mot ${k.hjemme || '???'}`);
+      }
+    });
+
+    let html = '<h4>Komplett kampoversikt per lag</h4>';
+    Object.keys(oversikt).sort().forEach(lag => {
+      html += `<div style="margin-bottom:12px; padding:12px; background:white; border-radius:10px; border-left:4px solid var(--primary); box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+        <div style="font-weight:bold; color:var(--primary); font-size:14px; text-transform:uppercase; margin-bottom:5px;">${escapeHtml(lag)} <span class="pill">${oversikt[lag].length} kamper</span></div>
+        <div style="font-size:13px; color:#4a5568; line-height:1.6;">${oversikt[lag].map(escapeHtml).join('<br>')}</div>
+      </div>`;
+    });
+    document.getElementById('totalOversikt').innerHTML = html;
+  }
+
+  function eksporterCSV() {
+    const rows = [['Tid', 'Bane', 'Hjemmelag', 'Bortelag']].concat(hentKamper().map(k => [k.tid, k.bane, k.hjemme, k.borte]));
+    const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sonecup-kampoppsett.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function snapshotKampPlan() {
+    return document.getElementById('kampPlan')?.innerHTML || '';
+  }
+
+  function autoLagre() {
+    if (erUnderOppstart) return;
+
+    const data = {
+      klubber: hentKlubberFraTabell(),
+      puljer,
+      bruktePuljer,
+      sisteH,
+      sisteM,
+      kampPlan: snapshotKampPlan(),
+      settings: {
+        baner: document.getElementById('baneInput')?.value,
+        tid: document.getElementById('tidInput')?.value,
+        startTid: document.getElementById('startTid')?.value,
+        targetMatches: document.getElementById('targetMatches')?.value
+      }
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function lastFraMinne() {
+    erUnderOppstart = true;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      erUnderOppstart = false;
+      visStatus('Fant ingen lagret turnering i denne nettleseren.', 'warning');
+      return;
+    }
+    try {
+      const data = JSON.parse(raw);
+      document.getElementById('clubRows').innerHTML = '';
+      (data.klubber || []).forEach(k => leggTilKlubbRad(k.navn, k.antall));
+      if (!document.querySelector('#clubRows tr')) leggTilKlubbRad();
+
+      if (data.settings) {
+        document.getElementById('baneInput').value = data.settings.baner || 4;
+        document.getElementById('tidInput').value = data.settings.tid || 20;
+        document.getElementById('startTid').value = data.settings.startTid || '10:00';
+        document.getElementById('targetMatches').value = data.settings.targetMatches || 3;
+      }
+      puljer = data.puljer || {};
+      bruktePuljer = data.bruktePuljer || [];
+      sisteH = data.sisteH ?? 10;
+      sisteM = data.sisteM ?? 0;
+      if (Object.keys(puljer).length) {
         tegnPuljer();
         document.getElementById('steg2_container').style.display = 'block';
-    }
-
-    function tegnPuljer() {
-        const grid = document.getElementById('puljeGrid'); grid.innerHTML = '';
-        Object.keys(puljer).forEach((p, index) => {
-            let mørkFarge = hentPuljeFarge(index, true);
-            let lysFarge = hentPuljeFarge(index, false);
-            let div = document.createElement('div'); div.className = `pulje-box`;
-            div.style.backgroundColor = lysFarge; div.style.borderLeftColor = mørkFarge;
-            div.innerHTML = `<strong>Pulje ${p}</strong><br><small>${puljer[p].length} lag</small><hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">`;
-            div.ondragover = e => e.preventDefault();
-            div.ondrop = e => {
-                let lag = e.dataTransfer.getData("text").split('|')[0];
-                Object.keys(puljer).forEach(k => puljer[k] = puljer[k].filter(l => l !== lag));
-                puljer[p].push(lag); tegnPuljer();
-            };
-            puljer[p].forEach(l => {
-                let t = document.createElement('div'); t.className = 'team-tag'; t.draggable = true; t.innerText = l;
-                t.style.borderLeftColor = mørkFarge;
-                t.ondragstart = e => e.dataTransfer.setData("text", l + "|" + p);
-                div.appendChild(t);
-            });
-            grid.appendChild(div);
-        });
-    }
-
-    function startOppsett() {
-        const startTidInput = document.getElementById('startTid').value.split(':');
-        sisteH = parseInt(startTidInput[0]); sisteM = parseInt(startTidInput[1]);
-        document.getElementById('kampPlan').innerHTML = ""; bruktePuljer = [];
+      }
+      if (data.kampPlan) {
+        document.getElementById('kampPlan').innerHTML = data.kampPlan;
         document.getElementById('steg3_container').style.display = 'block';
-        leggTilNesteBølgeSett();
-    }
-
-    function tellKamper(lagNavn) {
-        let antall = 0;
-        document.querySelectorAll('#kampPlan .drop-zone').forEach(z => {
-            if(z.innerText.trim() === lagNavn) antall++;
-        });
-        return antall;
-    }
-
-    function oppdaterLagPool() {
-        const pool = document.getElementById('lagPool'); pool.innerHTML = '';
-        pool.ondragover = e => e.preventDefault();
-        pool.ondrop = e => {
-            e.preventDefault();
-            if(draggedElement) { 
-                draggedElement.innerText = "-"; draggedElement.style.backgroundColor = ""; 
-                draggedElement.style.borderLeftColor = "#cbd5e0"; draggedElement = null; 
-            }
-            oppdaterLagPool();
-        };
-
-        Object.keys(puljer).forEach((p, idx) => {
-            puljer[p].forEach(l => {
-                let kAntall = tellKamper(l);
-                let t = document.createElement('div'); 
-                t.className = 'team-tag' + (kAntall < 3 ? ' low-count' : '');
-                t.draggable = true;
-                t.style.backgroundColor = hentPuljeFarge(idx);
-                t.style.borderLeftColor = hentPuljeFarge(idx, true);
-                let navnSpan = document.createElement('span'); navnSpan.innerText = l;
-                let badge = document.createElement('span'); badge.className = 'count-badge'; badge.innerText = kAntall;
-                t.appendChild(navnSpan); t.appendChild(badge);
-                t.ondragstart = e => { 
-                    draggedElement = null; 
-                    e.dataTransfer.setData("text", JSON.stringify({tekst: l, bg: t.style.backgroundColor, border: t.style.borderLeftColor})); 
-                };
-                pool.appendChild(t);
-            });
-        });
-    }
-
-    function dropInMatch(e) { 
-        e.preventDefault(); let target = e.target.closest('.drop-zone'); if(!target) return;
-        try {
-            let data = JSON.parse(e.dataTransfer.getData("text"));
-            if(draggedElement) { draggedElement.innerText = "-"; draggedElement.style.backgroundColor = ""; draggedElement.style.borderLeftColor = "#cbd5e0"; } 
-            target.innerText = data.tekst; target.style.backgroundColor = data.bg; target.style.borderLeftColor = data.border;
-            draggedElement = null;
-            oppdaterLagPool();
-        } catch(err) {}
-    }
-
-    function dragFromMatch(e) { 
-        if(e.target.innerText === "-") return; draggedElement = e.target; 
-        e.dataTransfer.setData("text", JSON.stringify({tekst: e.target.innerText, bg: e.target.style.backgroundColor, border: e.target.style.borderLeftColor})); 
-    }
-
-    function leggTilNesteBølgeSett() {
-        const baner = parseInt(document.getElementById('baneInput').value);
-        const intervall = parseInt(document.getElementById('tidInput').value);
-        const gjenstående = Object.keys(puljer).filter(p => !bruktePuljer.includes(p));
-        if (gjenstående.length === 0) return;
-        const puljerPerBlokk = Math.max(1, Math.floor(baner / 2));
-        const blokk1 = gjenstående.slice(0, puljerPerBlokk);
-        const blokk2 = gjenstående.slice(puljerPerBlokk, puljerPerBlokk * 2);
-        bruktePuljer.push(...blokk1, ...blokk2);
-        let html = "";
-        for (let r = 0; r < 6; r++) {
-            let aktivePuljer = (r % 2 === 0) ? blokk1 : blokk2;
-            if (aktivePuljer.length === 0) continue;
-            let tid = `${sisteH.toString().padStart(2,'0')}:${sisteM.toString().padStart(2,'0')}`;
-            let kampIndex = Math.floor(r / 2);
-            html += `<div class="wave-label"><span class="tid-info">KL. ${tid}</span> <span>Pulje ${aktivePuljer.join(' & ')}</span></div><table>`;
-            let matches = [];
-            aktivePuljer.forEach(pk => {
-                let l = puljer[pk]; let m_list;
-                if(l.length === 4) m_list = [[[l[0],l[1]],[l[2],l[3]]], [[l[0],l[2]],[l[1],l[3]]], [[l[0],l[3]],[l[1],l[2]]]];
-                else if(l.length === 3) m_list = [[[l[0],l[1]],['-','-']], [[l[0],l[2]],['-','-']], [[l[1],l[2]],['-','-']]];
-                else m_list = [[[l[0],l[1]],['-','-']], [['-','-'],['-','-']], [['-','-'],['-','-']]];
-                matches.push({p:pk, t:m_list[kampIndex][0]}, {p:pk, t:m_list[kampIndex][1]});
-            });
-            for(let b=1; b<=baner; b++) {
-                let mO = matches[b-1]; let hLag = (mO && mO.t[0] !== '-') ? mO.t[0] : '-';
-                let bLag = (mO && mO.t[1] !== '-') ? mO.t[1] : '-';
-                let pID = (mO && hLag !== '-') ? mO.p : null;
-                let pIndex = pID ? pID.charCodeAt(0) - 65 : -1;
-                let stil = pID ? `style="background-color:${hentPuljeFarge(pIndex)}; border-left-color:${hentPuljeFarge(pIndex, true)}"` : "";
-                html += `<tr><td width="60">Bane ${b}</td><td width="80">${pID ? 'Pulje ' + pID : '-'}</td>
-                <td><div class="drop-zone" ${stil} ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">${hLag}</div></td>
-                <td width="30" style="text-align:center">vs</td>
-                <td><div class="drop-zone" ${stil} ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">${bLag}</div></td></tr>`;
-            }
-            html += "</table>"; sisteM += intervall; if(sisteM>=60){sisteH++; sisteM-=60;}
-        }
-        document.getElementById('kampPlan').insertAdjacentHTML('beforeend', html);
+        aktiverKlikkPlassering();
         oppdaterLagPool();
+        validerKampoppsett();
+      }
+      oppdaterLivePreview();
+      erUnderOppstart = false;
+      autoLagre();
+      visStatus('Lagret oppsett er hentet.', 'success');
+    } catch(err) {
+      erUnderOppstart = false;
+      visStatus('Kunne ikke lese lagret oppsett. Det kan være skadet data i nettleseren.', 'danger');
     }
+  }
 
-    function leggTilTidsluke() {
-        const baner = parseInt(document.getElementById('baneInput').value);
-        let tid = `${sisteH.toString().padStart(2,'0')}:${sisteM.toString().padStart(2,'0')}`;
-        let html = `<div class="wave-label"><span class="tid-info">KL. ${tid}</span> <span>PAUSE / EGEN PERIODE</span></div><table>`;
-        for(let b=1; b<=baner; b++) {
-            html += `<tr>
-                <td width="60">Bane ${b}</td>
-                <td width="80">-</td>
-                <td><div class="drop-zone" ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">-</div></td>
-                <td width="30" style="text-align:center">vs</td>
-                <td><div class="drop-zone" ondragover="event.preventDefault()" ondrop="dropInMatch(event)" ondragstart="dragFromMatch(event)" draggable="true">-</div></td>
-            </tr>`;
-        }
-        html += "</table>"; 
-        document.getElementById('kampPlan').insertAdjacentHTML('beforeend', html);
-        sisteM += 20; if(sisteM>=60){sisteH++; sisteM-=60;}
-        oppdaterLagPool();
+  function nullstillAlt() {
+    if (!confirm('Vil du nullstille alt? Dette sletter også lagret oppsett i denne nettleseren.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    puljer = {};
+    bruktePuljer = [];
+    document.getElementById('clubRows').innerHTML = '';
+    leggTilKlubbRad();
+    document.getElementById('puljeGrid').innerHTML = '';
+    document.getElementById('kampPlan').innerHTML = '';
+    document.getElementById('steg2_container').style.display = 'none';
+    document.getElementById('steg3_container').style.display = 'none';
+    oppdaterLivePreview();
+    visStatus('Alt er nullstilt.', 'success');
+  }
+
+  function visStatus(msg, type = 'success') {
+    const box = document.getElementById('saveStatus');
+    box.className = `status-box no-print ${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : ''}`;
+    box.innerText = msg;
+    box.style.display = 'block';
+    clearTimeout(visStatus.timer);
+    visStatus.timer = setTimeout(() => { box.style.display = 'none'; }, 3500);
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"]/g, s => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[s]));
+  }
+
+  function escapeAttr(str) { return escapeHtml(str).replace(/'/g, '&#039;'); }
+
+  document.addEventListener('contextmenu', e => {
+    if (e.target.classList.contains('drop-zone')) {
+      e.preventDefault();
+      tømDropZone(e.target);
+      oppdaterLagPool();
+      validerKampoppsett();
+      autoLagre();
     }
+  });
 
-    function kjørSøk() {
-        const q = document.getElementById('teamSearch').value.toLowerCase().trim();
-        const res = document.getElementById('searchResult');
-        if(q.length < 2) { res.innerHTML = ""; return; }
-        let treff = [];
-        const bølger = document.querySelectorAll('.wave-label');
-        const tabeller = document.querySelectorAll('#kampPlan table');
-        tabeller.forEach((tabell, idx) => {
-            const tid = bølger[idx]?.querySelector('.tid-info')?.innerText || "??:??";
-            tabell.querySelectorAll('tr').forEach(rad => {
-                const celler = rad.querySelectorAll('.drop-zone');
-                if(celler.length === 2 && (celler[0].innerText.toLowerCase().includes(q) || celler[1].innerText.toLowerCase().includes(q))) {
-                    treff.push(`<div class="search-res-item"><strong>${tid}</strong> | ${celler[0].innerText} vs ${celler[1].innerText}</div>`);
-                }
-            });
-        });
-        res.innerHTML = treff.join('') || "<p style='font-size:12px;'>Ingen treff.</p>";
-    }
-
-    function genererTotalOversikt() {
-        let oversikt = {};
-        const bølger = document.querySelectorAll('.wave-label');
-        const tabeller = document.querySelectorAll('#kampPlan table');
-        tabeller.forEach((tabell, idx) => {
-            // Henter tid fra .tid-info uavhengig om det er kamp eller pause
-            const tidElement = bølger[idx]?.querySelector('.tid-info');
-            const tid = tidElement ? tidElement.innerText.replace('KL. ', '') : "??:??";
-            
-            tabell.querySelectorAll('tr').forEach(rad => {
-                const celler = rad.querySelectorAll('td');
-                if(celler.length >= 5) {
-                    const hLag = celler[2].querySelector('.drop-zone')?.innerText.trim();
-                    const bLag = celler[4].querySelector('.drop-zone')?.innerText.trim();
-                    const bane = celler[0].innerText;
-                    if(hLag && hLag !== "-") { 
-                        if(!oversikt[hLag]) oversikt[hLag] = []; 
-                        oversikt[hLag].push(`KL. ${tid} (${bane}) mot ${bLag || "???"}`); 
-                    }
-                    if(bLag && bLag !== "-") { 
-                        if(!oversikt[bLag]) oversikt[bLag] = []; 
-                        oversikt[bLag].push(`KL. ${tid} (${bane}) mot ${hLag || "???"}`); 
-                    }
-                }
-            });
-        });
-        
-        let html = "<h4>Komplett kampoversikt per lag</h4>";
-        Object.keys(oversikt).sort().forEach(lag => {
-            html += `<div style="margin-bottom:12px; padding:12px; background:white; border-radius:8px; border-left:4px solid var(--primary); box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-                <div style="font-weight:bold; color:var(--primary); font-size:14px; text-transform:uppercase; margin-bottom:5px;">${lag}</div>
-                <div style="font-size:13px; color:#4a5568; line-height:1.6;">${oversikt[lag].join('<br>')}</div>
-            </div>`;
-        });
-        document.getElementById('totalOversikt').innerHTML = html;
-    }
-
-    document.addEventListener('contextmenu', e => { 
-        if (e.target.classList.contains('drop-zone')) { 
-            e.preventDefault(); e.target.innerText = "-"; e.target.style.backgroundColor = ""; e.target.style.borderLeftColor = "#cbd5e0";
-            oppdaterLagPool();
-        } 
-    });
+  document.addEventListener('DOMContentLoaded', () => {
+    leggTilKlubbRad();
+    oppdaterLivePreview();
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) visStatus('Det finnes et lagret oppsett i nettleseren. Trykk «Hent lagret oppsett» for å fortsette.', 'warning');
+    erUnderOppstart = false;
+  });
 </script>
 </body>
 </html>
