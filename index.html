@@ -215,6 +215,54 @@
     .conflict-list { margin: 0; padding-left: 18px; }
     .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#edf2f7; color:#2d3748; font-size:12px; font-weight:800; }
 
+    .dommer-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .dommer-table th,
+    .dommer-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #edf2f7;
+      text-align: left;
+      font-size: 14px;
+    }
+    .dommer-table th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .dommer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+    }
+    .dommer-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dommer-cell {
+      min-height: 38px;
+      border: 1px dashed #cbd5e0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: grab;
+      background: #fff;
+    }
+    .dommer-cell.drag-over {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(49,130,206,.12);
+    }
+    .dommer-cell.conflict {
+      border-color: var(--danger);
+      background: #fff5f5;
+    }
+
     @media (max-width: 900px) {
       body { padding: 10px; }
       .steg3-layout, .team-input-layout { grid-template-columns: 1fr; }
@@ -362,6 +410,21 @@
       </div>
       <div id="totalOversikt" style="margin-top: 20px;"></div>
     </div>
+  </div>
+
+  <div class="control-panel no-print" id="dommerModul" style="display:none;">
+    <h3 style="margin-top: 0;">⚖️ Dommermodul</h3>
+
+    <label>Dommere, ett navn per linje</label>
+    <textarea id="dommerInput" class="input-field" rows="5" placeholder="Skriv inn dommere, ett navn per linje"></textarea>
+
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-primary" onclick="fordelDommere()">Fordel dommere</button>
+      <button class="btn btn-outline" onclick="nullstillDommere()">Tøm dommeroppsett</button>
+    </div>
+
+    <div id="dommerVarsel" class="status-box warning no-print" style="margin-top:14px;"></div>
+    <div id="dommerPlan" style="margin-top:20px;"></div>
   </div>
 </div>
 
@@ -589,6 +652,7 @@
     document.getElementById('kampPlan').innerHTML = '';
     bruktePuljer = [];
     document.getElementById('steg3_container').style.display = 'block';
+    document.getElementById('dommerModul').style.display = 'block';
     leggTilNesteBølgeSett();
     autoLagre();
   }
@@ -982,6 +1046,8 @@
     document.getElementById('kampPlan').innerHTML = '';
     document.getElementById('steg2_container').style.display = 'none';
     document.getElementById('steg3_container').style.display = 'none';
+    document.getElementById('dommerModul').style.display = 'none';
+    nullstillDommere();
     oppdaterLivePreview();
     visStatus('Alt er nullstilt.', 'success');
   }
@@ -993,6 +1059,233 @@
     box.style.display = 'block';
     clearTimeout(visStatus.timer);
     visStatus.timer = setTimeout(() => { box.style.display = 'none'; }, 3500);
+  }
+
+  function dommerFarge(index) {
+    const hue = (index * 137.5) % 360;
+    return `hsl(${hue}, 70%, 55%)`;
+  }
+
+  function hentDommerNavn() {
+    return document.getElementById('dommerInput').value
+      .split('\n')
+      .map(n => n.trim())
+      .filter(Boolean);
+  }
+
+  function fordelDommere() {
+    const dommere = hentDommerNavn();
+    const planDiv = document.getElementById('dommerPlan');
+    const varsel = document.getElementById('dommerVarsel');
+
+    if (!dommere.length) {
+      planDiv.innerHTML = '';
+      varsel.style.display = 'block';
+      varsel.innerText = 'Legg inn minst én dommer først.';
+      return;
+    }
+
+    const kamper = hentKamper().filter(k => k.hjemme !== '-' || k.borte !== '-');
+
+    if (!kamper.length) {
+      planDiv.innerHTML = '';
+      varsel.style.display = 'block';
+      varsel.innerText = 'Lag kampoppsett først, så kan dommere fordeles.';
+      return;
+    }
+
+    const tider = [...new Set(kamper.map(k => k.tid))];
+    const baner = [...new Set(kamper.map(k => k.bane))]
+      .sort((a, b) => parseInt(a.replace(/[^0-9]/g, ''), 10) - parseInt(b.replace(/[^0-9]/g, ''), 10));
+
+    const teller = {};
+    const sistBane = {};
+    const plan = {};
+    dommere.forEach(d => {
+      teller[d] = 0;
+      sistBane[d] = null;
+    });
+
+    tider.forEach(tid => {
+      plan[tid] = {};
+      const bruktDenneTiden = new Set();
+
+      baner.forEach(bane => {
+        const harKamp = kamper.some(k => k.tid === tid && k.bane === bane);
+        if (!harKamp) {
+          plan[tid][bane] = '-';
+          return;
+        }
+
+        const ledige = dommere.filter(d => !bruktDenneTiden.has(d));
+        const kandidater = ledige.length ? ledige : dommere;
+
+        kandidater.sort((a, b) => {
+          const diffAntall = teller[a] - teller[b];
+          if (diffAntall !== 0) return diffAntall;
+
+          const aSammeBane = sistBane[a] === bane ? -1 : 0;
+          const bSammeBane = sistBane[b] === bane ? -1 : 0;
+          if (aSammeBane !== bSammeBane) return aSammeBane - bSammeBane;
+
+          return dommere.indexOf(a) - dommere.indexOf(b);
+        });
+
+        const valgt = kandidater[0];
+        plan[tid][bane] = valgt;
+        bruktDenneTiden.add(valgt);
+        teller[valgt]++;
+        sistBane[valgt] = bane;
+      });
+    });
+
+    tegnDommerPlan(plan, dommere, baner, tider);
+
+    if (dommere.length < baner.length) {
+      varsel.style.display = 'block';
+      varsel.innerText = 'Merk: Det er færre dommere enn baner. Da kan samme dommer måtte dekke flere baner på samme tidspunkt.';
+    } else {
+      varsel.style.display = 'none';
+    }
+  }
+
+  function tegnDommerPlan(plan, dommere, baner, tider) {
+    const planDiv = document.getElementById('dommerPlan');
+
+    let html = `
+      <table class="dommer-table">
+        <thead>
+          <tr>
+            <th>Tid</th>
+            ${baner.map(b => `<th>${escapeHtml(b)}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    tider.forEach(tid => {
+      html += `<tr><td><strong>${escapeHtml(tid)}</strong></td>`;
+      baner.forEach(bane => {
+        const dommer = plan[tid]?.[bane] || '-';
+        const index = dommere.indexOf(dommer);
+        const farge = index >= 0 ? dommerFarge(index) : '#cbd5e0';
+
+        html += `
+          <td>
+            <div class="dommer-cell" draggable="${dommer !== '-'}" data-tid="${escapeAttr(tid)}" data-bane="${escapeAttr(bane)}"
+              ondragstart="dragDommer(event)" ondragover="dommerDragOver(event)" ondragleave="dommerDragLeave(event)" ondrop="dropDommer(event)">
+              ${dommer === '-' ? '-' : `
+                <span class="dommer-badge">
+                  <span class="dommer-dot" style="background:${farge};"></span>
+                  <span>${escapeHtml(dommer)}</span>
+                </span>
+              `}
+            </div>
+          </td>
+        `;
+      });
+      html += '</tr>';
+    });
+
+    html += `
+        </tbody>
+      </table>
+      <div id="dommerFordeling" style="margin-top:16px; background:white; border-radius:12px; padding:14px; border-left:4px solid var(--accent);"></div>
+    `;
+
+    planDiv.innerHTML = html;
+    oppdaterDommerFordeling();
+  }
+
+  function dragDommer(e) {
+    const cell = e.target.closest('.dommer-cell');
+    if (!cell || cell.innerText.trim() === '-') return;
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      tid: cell.dataset.tid,
+      bane: cell.dataset.bane
+    }));
+  }
+
+  function dommerDragOver(e) {
+    e.preventDefault();
+    const cell = e.target.closest('.dommer-cell');
+    if (cell) cell.classList.add('drag-over');
+  }
+
+  function dommerDragLeave(e) {
+    const cell = e.target.closest('.dommer-cell');
+    if (cell) cell.classList.remove('drag-over');
+  }
+
+  function dropDommer(e) {
+    e.preventDefault();
+    const target = e.target.closest('.dommer-cell');
+    if (!target) return;
+    target.classList.remove('drag-over');
+
+    let sourceInfo;
+    try {
+      sourceInfo = JSON.parse(e.dataTransfer.getData('text/plain'));
+    } catch(err) {
+      return;
+    }
+
+    const source = document.querySelector(`.dommer-cell[data-tid="${CSS.escape(sourceInfo.tid)}"][data-bane="${CSS.escape(sourceInfo.bane)}"]`);
+    if (!source || source === target) return;
+
+    const sourceHtml = source.innerHTML;
+    const sourceDraggable = source.getAttribute('draggable');
+
+    source.innerHTML = target.innerHTML;
+    source.setAttribute('draggable', target.getAttribute('draggable'));
+
+    target.innerHTML = sourceHtml;
+    target.setAttribute('draggable', sourceDraggable);
+
+    oppdaterDommerFordeling();
+  }
+
+  function oppdaterDommerFordeling() {
+    const dommere = hentDommerNavn();
+    const teller = {};
+    const konflikter = [];
+    dommere.forEach(d => teller[d] = 0);
+
+    document.querySelectorAll('.dommer-cell').forEach(c => c.classList.remove('conflict'));
+
+    const perTid = {};
+    document.querySelectorAll('.dommer-cell').forEach(cell => {
+      const navn = cell.innerText.trim();
+      if (!navn || navn === '-') return;
+
+      teller[navn] = (teller[navn] || 0) + 1;
+      const key = `${cell.dataset.tid}|${navn}`;
+      if (!perTid[key]) perTid[key] = [];
+      perTid[key].push(cell);
+    });
+
+    Object.keys(perTid).forEach(key => {
+      if (perTid[key].length > 1) {
+        const [tid, navn] = key.split('|');
+        perTid[key].forEach(cell => cell.classList.add('conflict'));
+        konflikter.push(`${navn} er satt opp på flere baner kl. ${tid}.`);
+      }
+    });
+
+    const box = document.getElementById('dommerFordeling');
+    if (!box) return;
+
+    box.innerHTML = `
+      <strong>Fordeling:</strong><br>
+      ${Object.keys(teller).map(d => `${escapeHtml(d)}: ${teller[d]} kamper`).join('<br>')}
+      ${konflikter.length ? `<div style="margin-top:10px; color:var(--danger); font-weight:800;">⚠️ ${konflikter.map(escapeHtml).join('<br>')}</div>` : ''}
+    `;
+  }
+
+  function nullstillDommere() {
+    document.getElementById('dommerInput').value = '';
+    document.getElementById('dommerPlan').innerHTML = '';
+    document.getElementById('dommerVarsel').style.display = 'none';
   }
 
   function escapeHtml(str) {
